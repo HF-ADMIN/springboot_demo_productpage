@@ -35,7 +35,7 @@ public class ServiceUtil {
      * @description baseURL에 CALL 하는 Mehtod입니다.
      */
     public static JSONObject callRemoteService(String baseURL, HttpEntity<?> requestEntity, String httpMethod) throws Exception {
-        logger.info("=====================> [EmployeeService / getFlaskService] baseURL : " + baseURL);
+        logger.info("=====================> [ServiceUtil / callRemoteService] baseURL : " + baseURL);
         JSONObject jsonObject = null;
 
         ResponseEntity<String> serviceResponse = null;
@@ -50,7 +50,7 @@ public class ServiceUtil {
 
         if(serviceResponse != null && serviceResponse.getBody() != null) {
             logger.info(
-                    "=====================> [callRemoteService] serviceResponse :" + serviceResponse.getBody());
+                    "=====================> [ServiceUtil / callRemoteService] serviceResponse :" + serviceResponse.getBody());
 
             // From String to JSONOBject
             JSONParser jsonParser = new JSONParser();
@@ -58,6 +58,7 @@ public class ServiceUtil {
             jsonObject = (JSONObject)jsonParser.parse(jsonString);
         }
 
+        logger.info("=====================> [ServiceUtil / callRemoteService] Return jsonObject : " + jsonObject);
         return jsonObject;
     }
 
