@@ -11,10 +11,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 public class ServiceUtil {
-    public static final String DETAIL_URI = "192.168.188.156:30413";
-    public static final String DETAIL_GET_SERVICE = "getDetail";
+    public static final String DETAILS_URI = "192.168.188.156:30413";
+    public static final String DETAILS_GET_SERVICE = "getDetail";
 
     public static final String REVIEWS_URI = "192.168.188.150:30366";
+    public static final String REVIEWS_GET_SERVICE = "getReviews";
     public static final String REVIEWS_POST_SERVICE = "postReviews";
 
     private static Logger logger = LoggerFactory.getLogger(ServiceUtil.class);

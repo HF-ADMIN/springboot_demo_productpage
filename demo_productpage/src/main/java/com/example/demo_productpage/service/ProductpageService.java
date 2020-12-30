@@ -98,21 +98,26 @@ public class ProductpageService {
         ProductpageDTO.DetailsResponse response = new ProductpageDTO.DetailsResponse();
 
         // Remote Service Call을 위한 Setting
-        String baseURL = ServiceUtil.DETAIL_URI + "/" + ServiceUtil.DETAIL_GET_SERVICE + "?prodeCode=" + prodCode;
+        String baseDetailsURL = ServiceUtil.DETAILS_URI + "/" + ServiceUtil.DETAILS_GET_SERVICE + "?prodeCode=" + prodCode;
+        String baseReviewsURL = ServiceUtil.REVIEWS_URI + "/" + ServiceUtil.REVIEWS_GET_SERVICE + "?prodeCode=" + prodCode;
         final HttpEntity<String> httpEntity = new HttpEntity<String>(requestHeader);
         String httpMethod = "GET";
+        boolean flag = false;
 
         try {
-            // Remote Service Call
-            JSONObject callResponse = ServiceUtil.callRemoteService(baseURL, httpEntity, httpMethod);
+            // Remote Service Call(Details Service)
+            JSONObject detailsResponse = ServiceUtil.callRemoteService(baseDetailsURL, httpEntity, httpMethod);
+            response.setProdCode(prodCode);
+            response.setProdName((String)detailsResponse.get("prodName"));
+            response.setDetailImg((String)detailsResponse.get("detailsImg"));
 
-            response.setProdCode((String)callResponse.get("prodCode"));
-            response.setProdName((String)callResponse.get("prodName"));
-            response.setDetailImg((String)callResponse.get("detailImg"));
-            response.setResultCode((Integer)callResponse.get("resultCode"));
+            if((Integer)detailsResponse.get("resultCode") == 200) flag = true;
 
-            // callResponse에서 reviewList 추출
-            JSONArray reviewsList = (JSONArray)callResponse.get("reviewsList");
+            // Remote Service Call(Reviews Service)
+            JSONObject reviewsResponse = ServiceUtil.callRemoteService(baseReviewsURL, httpEntity, httpMethod);
+
+            // reviewsResponse에서 reviewList 추출
+            JSONArray reviewsList = (JSONArray)reviewsResponse.get("reviewsList");
             List<ProductpageDTO.Review> tempList = new ArrayList<>();
             for(Object reviews : reviewsList) {
                 JSONObject tempObject = (JSONObject)reviews;
@@ -122,6 +127,10 @@ public class ProductpageService {
                 review.setRating((Integer)tempObject.get("rating"));
                 tempList.add(review);
             }
+
+            if((Integer)reviewsResponse.get("resultCode") == 200) flag = true;
+
+            if(flag) response.setResultCode(200);
 
             response.setReviewList(tempList);
         } catch(Exception e) {
