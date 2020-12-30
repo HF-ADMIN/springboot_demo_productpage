@@ -98,8 +98,8 @@ public class ProductpageService {
         ProductpageDTO.DetailsResponse response = new ProductpageDTO.DetailsResponse();
 
         // Remote Service Call을 위한 Setting
-        String baseDetailsURL = ServiceUtil.DETAILS_URI + "/" + ServiceUtil.DETAILS_GET_SERVICE + "?prodeCode=" + prodCode;
-        String baseReviewsURL = ServiceUtil.REVIEWS_URI + "/" + ServiceUtil.REVIEWS_GET_SERVICE + "?prodeCode=" + prodCode;
+        String baseDetailsURL = ServiceUtil.DETAILS_URI + "/" + ServiceUtil.DETAILS_SERVICE + "?prodeCode=" + prodCode;
+        String baseReviewsURL = ServiceUtil.REVIEWS_URI + "/" + ServiceUtil.REVIEWS_SERVICE + "?prodeCode=" + prodCode;
         final HttpEntity<String> httpEntity = new HttpEntity<String>(requestHeader);
         String httpMethod = "GET";
         boolean flag = false;
@@ -152,7 +152,7 @@ public class ProductpageService {
         ProductpageDTO.reviewsResponse response = new ProductpageDTO.reviewsResponse();
 
         // Remote Service Call을 위한 Setting
-        String baseURL = ServiceUtil.REVIEWS_URI + "/" + ServiceUtil.REVIEWS_POST_SERVICE;
+        String baseURL = ServiceUtil.REVIEWS_URI + "/" + ServiceUtil.REVIEWS_SERVICE;
         Map<String, Object> req_payload = new HashMap<>();
         req_payload.put("cudFlag", request.getCudFlag());
         req_payload.put("prodCode", request.getProdCode());
