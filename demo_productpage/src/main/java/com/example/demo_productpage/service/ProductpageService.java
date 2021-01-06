@@ -91,7 +91,7 @@ public class ProductpageService {
      * @methodName  getDetailsInfo
      * @return      ProductpageDTO.DetailsResponse
      * @throws      Exception
-     * @description Detail 화면의 Product Detail 정보와 goekd Product의 Review, Rating 정보들을 가져오는 Method 입니다.
+     * @description Detail 화면의 Product Detail 정보와 Product의 Review, Rating 정보들을 가져오는 Method 입니다.
      */
     public ProductpageDTO.DetailsResponse getDetailsInfo(HttpHeaders requestHeader, String prodCode) throws Exception {
 
