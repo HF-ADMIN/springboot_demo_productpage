@@ -23,7 +23,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import io.opentracing.Tracer;
+// import io.opentracing.Tracer;
 
 /**
  * @className ProductpageService
@@ -34,22 +34,23 @@ import io.opentracing.Tracer;
 public class ProductpageService {
 
     Logger logger = LoggerFactory.getLogger(ProductpageService.class);
-    
-    private RestTemplate restTemplate;
 
     @Autowired
     ProductpageRepository repository;
 
-    @Autowired
-    public ProductpageService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
+    // @Autowired
+    // private Tracer tracer;
 
     @Autowired
-    private Tracer tracer;
-
+    private Environment env;
+    
     @Autowired
-	private Environment env;
+    public RestTemplate restTemplate;
+
+    // @Autowired
+    // public ServiceUtil(RestTemplate restTemplate) {
+    //     this.restTemplate = restTemplate;
+    // }
 
     /**
      * @methodName  getProductpageInfo
@@ -64,17 +65,19 @@ public class ProductpageService {
 
         try {
             // ProductpageRepository를 사용하여 productpage table의 모든 데이터를 조회
-            List<ProductpageDAO> daoList = repository.findAll();
+            List<ProductpageDAO> daoList = repository.findByProdCode();
+            System.out.println("                      daoList : " + daoList);
             
             for(ProductpageDAO dao : daoList) {
                 ProductpageDTO.Product product = new ProductpageDTO.Product();
                 product.setProdCode(dao.getProdCode());
-                product.setProdName(dao.getProdCodeDAO().getProdName());
+                product.setProdName(dao.getProdName());
                 product.setProdIntro(dao.getProdIntro());
 
                 // File을 String으로 변환하여 product에 setting
-                File file = new File(dao.getImgPath());
-                product.setProdImg(CommUtil.fileToString(file));
+                // 테스트를 위해서 잠시 막아둠
+                // File file = new File(dao.getImgPath());
+                // product.setProdImg(CommUtil.fileToString(file));
                 prodList.add(product);
             }
             response.setProductList(prodList);
@@ -97,24 +100,30 @@ public class ProductpageService {
 
         ProductpageDTO.DetailsResponse response = new ProductpageDTO.DetailsResponse();
 
+        // test
+        ServiceUtil serviceUtil = new ServiceUtil();
+
         // Remote Service Call을 위한 Setting
-        String baseDetailsURL = ServiceUtil.DETAILS_URI + "/" + ServiceUtil.DETAILS_SERVICE + "?prodeCode=" + prodCode;
-        String baseReviewsURL = ServiceUtil.REVIEWS_URI + "/" + ServiceUtil.REVIEWS_SERVICE + "?prodeCode=" + prodCode;
+        String baseDetailsURL = ServiceUtil.DETAILS_URI + "/" + ServiceUtil.DETAILS_SERVICE + "?prodCode=" + prodCode;
+        String baseReviewsURL = ServiceUtil.REVIEWS_URI + "/" + ServiceUtil.REVIEWS_SERVICE + "?prodCode=" + prodCode;
         final HttpEntity<String> httpEntity = new HttpEntity<String>(requestHeader);
         String httpMethod = "GET";
         boolean flag = false;
 
         try {
             // Remote Service Call(Details Service)
-            JSONObject detailsResponse = ServiceUtil.callRemoteService(baseDetailsURL, httpEntity, httpMethod);
+            JSONObject detailsResponse = serviceUtil.callRemoteService(restTemplate, baseDetailsURL, httpEntity, httpMethod);
+            System.out.println("                         detailsResponse : " + detailsResponse);
+
             response.setProdCode(prodCode);
             response.setProdName((String)detailsResponse.get("prodName"));
             response.setDetailImg((String)detailsResponse.get("detailsImg"));
 
-            if((Integer)detailsResponse.get("resultCode") == 200) flag = true;
+            if("200".equals(String.valueOf(detailsResponse.get("resultCode")))) flag = true;
 
             // Remote Service Call(Reviews Service)
-            JSONObject reviewsResponse = ServiceUtil.callRemoteService(baseReviewsURL, httpEntity, httpMethod);
+            JSONObject reviewsResponse = serviceUtil.callRemoteService(restTemplate, baseReviewsURL, httpEntity, httpMethod);
+            System.out.println("                         reviewsResponse : " + reviewsResponse);
 
             // reviewsResponse에서 reviewList 추출
             JSONArray reviewsList = (JSONArray)reviewsResponse.get("reviewsList");
@@ -124,11 +133,11 @@ public class ProductpageService {
                 ProductpageDTO.Review review = new ProductpageDTO.Review();
                 review.setReviewsId((String)tempObject.get("reviewsId"));
                 review.setContents((String)tempObject.get("contents"));
-                review.setRating((Integer)tempObject.get("rating"));
+                review.setRating(Integer.valueOf(String.valueOf(tempObject.get("rating"))));
                 tempList.add(review);
             }
 
-            if((Integer)reviewsResponse.get("resultCode") == 200) flag = true;
+            if("200".equals(String.valueOf(detailsResponse.get("resultCode")))) flag = true;
 
             if(flag) response.setResultCode(200);
 
@@ -151,6 +160,9 @@ public class ProductpageService {
 
         ProductpageDTO.reviewsResponse response = new ProductpageDTO.reviewsResponse();
 
+        // test
+        ServiceUtil serviceUtil = new ServiceUtil();
+
         // Remote Service Call을 위한 Setting
         String baseURL = ServiceUtil.REVIEWS_URI + "/" + ServiceUtil.REVIEWS_SERVICE;
         Map<String, Object> req_payload = new HashMap<>();
@@ -164,9 +176,9 @@ public class ProductpageService {
 
         try {
             // Remote Service Call
-            JSONObject callResponse = ServiceUtil.callRemoteService(baseURL, httpEntity, httpMethod);
+            JSONObject callResponse = serviceUtil.callRemoteService(restTemplate, baseURL, httpEntity, httpMethod);
 
-            response.setResultCode((Integer)callResponse.get("resultCode"));
+            response.setResultCode(Integer.valueOf(String.valueOf(callResponse.get("resultCode"))));
 
         } catch(Exception e) {
             e.printStackTrace();

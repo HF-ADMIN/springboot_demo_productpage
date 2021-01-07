@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.opentracing.Tracer;
+// import io.opentracing.Tracer;
 
 /**
  * @className ProductpageController
@@ -32,16 +32,16 @@ public class ProductpageController {
     @Autowired
     private ProductpageService service;
 
-    @Autowired
-    private Tracer tracer;
+    // @Autowired
+    // private Tracer tracer;
 
     /**
      * @methodName getProductpageInfo
      * @throws     Exception
      * @description GET Request를 받아서 전체 Productpage 정보를 조회하는 메소드
      */
-    @RequestMapping(value="/ProductpageInfo", method=RequestMethod.GET)
-    public ResponseEntity<ProductpageDTO.MainResponse> getProductpageInfo(@RequestHeader HttpHeaders requestHeader) throws Exception{
+    @RequestMapping(value="/productpageInfo", method=RequestMethod.GET)
+    public ResponseEntity<ProductpageDTO.MainResponse> getProductpageInfo() throws Exception{
         ProductpageDTO.MainResponse responseBody = null;
         try {
             responseBody = service.getProductpageInfo();
@@ -57,7 +57,7 @@ public class ProductpageController {
      * @throws     Exception
      * @description GET Request를 받아서 전체 해당 prodCode에 대한 Details 정보를 조회하는 메소드
      */
-    @RequestMapping(value="/DetailsInfo", method=RequestMethod.GET)
+    @RequestMapping(value="/detailsInfo", method=RequestMethod.GET)
     public ResponseEntity<ProductpageDTO.DetailsResponse> getDetailsInfo(@RequestHeader HttpHeaders requestHeader, @RequestParam String prodCode) throws Exception{
         ProductpageDTO.DetailsResponse responseBody = null;
         try {
@@ -74,7 +74,7 @@ public class ProductpageController {
      * @throws     Exception
      * @description GET Request를 받아서 전체 해당 prodCode에 대한 Details 정보를 조회하는 메소드
      */
-    @RequestMapping(value="/ReviewsInfo", method=RequestMethod.POST)
+    @RequestMapping(value="/reviewsInfo", method=RequestMethod.POST)
     public ResponseEntity<ProductpageDTO.reviewsResponse> postReviewsInfo(@RequestHeader HttpHeaders requestHeader, @RequestBody ProductpageDTO.Request request) throws Exception{
         ProductpageDTO.reviewsResponse responseBody = null;
         try {

@@ -8,24 +8,33 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+@Component
 public class ServiceUtil {
-    public static final String DETAILS_URI = "192.168.188.156:30413";
-    public static final String DETAILS_SERVICE = "DetailsInfo";
+    // public static final String DETAILS_URI = "192.168.188.156:30413";
+    public static final String DETAILS_URI = "http://localhost:8082";
+    public static final String DETAILS_SERVICE = "detailsInfo";
 
-    public static final String REVIEWS_URI = "192.168.188.150:30366";
-    public static final String REVIEWS_SERVICE = "ReviewsInfo";
+    // public static final String REVIEWS_URI = "192.168.188.150:30366";
+    public static final String REVIEWS_URI = "http://localhost:8083";
+    public static final String REVIEWS_SERVICE = "reviewsInfo";
 
     private static Logger logger = LoggerFactory.getLogger(ServiceUtil.class);
 
-    @Autowired
-    private static RestTemplate restTemplate;
+    // @Autowired
+    // public RestTemplate restTemplate;
 
     // @Autowired
     // public ServiceUtil(RestTemplate restTemplate) {
     //     this.restTemplate = restTemplate;
     // }
+
+    public ServiceUtil() {
+      
+    }
+
 
     /**
      * @methodName  callRemoteService
@@ -34,7 +43,7 @@ public class ServiceUtil {
      * @throws      Exception
      * @description baseURL에 CALL 하는 Mehtod입니다.
      */
-    public static JSONObject callRemoteService(String baseURL, HttpEntity<?> requestEntity, String httpMethod) throws Exception {
+    public JSONObject callRemoteService(RestTemplate restTemplate, String baseURL, HttpEntity<?> requestEntity, String httpMethod) throws Exception {
         logger.info("=====================> [ServiceUtil / callRemoteService] baseURL : " + baseURL);
         JSONObject jsonObject = null;
 
@@ -61,5 +70,7 @@ public class ServiceUtil {
         logger.info("=====================> [ServiceUtil / callRemoteService] Return jsonObject : " + jsonObject);
         return jsonObject;
     }
+
+    
 
 }

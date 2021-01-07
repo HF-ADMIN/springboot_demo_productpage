@@ -26,7 +26,7 @@ public class ProductpageDAO {
     @Id 
     @Column(name="id", nullable=false)
     @GeneratedValue
-    private Integer id;
+    private Long id;
 
     @Column(name="prod_code", nullable=false, length=20)
     private String prodCode;
@@ -40,15 +40,18 @@ public class ProductpageDAO {
     @Column(name="create_date", nullable=true)
     private Date createDate;
 
-    @OneToOne(cascade={CascadeType.ALL})
-    @JoinColumn(name="prod_code", insertable = false)
-    private ProdCodeDAO prodCodeDAO;
+    @Column(name="prod_name", nullable=true, length=20)
+    private String prodName;
 
-    public ProdCodeDAO getProdCodeDAO() {
-        return prodCodeDAO;
-    }
+    // @OneToOne(cascade={CascadeType.ALL})
+    // @JoinColumn(name="prod_code", insertable = false)
+    // private ProdCodeDAO prodCodeDAO;
 
-    public void setProdCodeDAO(ProdCodeDAO prodCodeDAO) {
-        this.prodCodeDAO = prodCodeDAO;
-    }
+    // public ProdCodeDAO getProdCodeDAO() {
+    //     return prodCodeDAO;
+    // }
+
+    // public void setProdCodeDAO(ProdCodeDAO prodCodeDAO) {
+    //     this.prodCodeDAO = prodCodeDAO;
+    // }
 }
