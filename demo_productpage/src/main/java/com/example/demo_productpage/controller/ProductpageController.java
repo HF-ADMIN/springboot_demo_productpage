@@ -41,7 +41,7 @@ public class ProductpageController {
      * @description GET Request를 받아서 전체 Productpage 정보를 조회하는 메소드
      */
     @RequestMapping(value="/productpageInfo", method=RequestMethod.GET)
-    public ResponseEntity<ProductpageDTO.MainResponse> getProductpageInfo() throws Exception{
+    public ResponseEntity<ProductpageDTO.MainResponse> getProductpageInfo(@RequestHeader HttpHeaders requestHeader) throws Exception{
         ProductpageDTO.MainResponse responseBody = null;
         try {
             responseBody = service.getProductpageInfo();
