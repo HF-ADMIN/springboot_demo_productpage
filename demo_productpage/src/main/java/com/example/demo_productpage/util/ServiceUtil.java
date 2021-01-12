@@ -13,12 +13,13 @@ import org.springframework.web.client.RestTemplate;
 
 @Component
 public class ServiceUtil {
+    
     // public static final String DETAILS_URI = "192.168.188.156:30413";
-    public static final String DETAILS_URI = "http://localhost:8082";
+    public static final String DETAILS_URI = "http://springboot-details-service.demo-tinfo.svc.cluster.local:8082";
     public static final String DETAILS_SERVICE = "detailsInfo";
 
     // public static final String REVIEWS_URI = "192.168.188.150:30366";
-    public static final String REVIEWS_URI = "http://localhost:8083";
+    public static final String REVIEWS_URI = "http://springboot-reviews-service.demo-tinfo.svc.cluster.local:8083";
     public static final String REVIEWS_SERVICE = "reviewsInfo";
 
     private static Logger logger = LoggerFactory.getLogger(ServiceUtil.class);

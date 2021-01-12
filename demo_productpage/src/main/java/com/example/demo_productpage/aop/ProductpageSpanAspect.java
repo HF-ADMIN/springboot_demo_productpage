@@ -116,20 +116,30 @@ public class ProductpageSpanAspect {
     public Object headerExchangeGet(ProceedingJoinPoint pjp) throws Throwable {
         logger.info("[                             headerExchangeGet Start                                ]");
         HttpHeaders headers = null;
-        Integer id = null;
         Object result = null;
+        String prodCode = null;
 
         // getMehtod의 Type : all / single
-        String getType = null;
         for(Object obj : pjp.getArgs()) {
             if(obj instanceof HttpHeaders) {
                 logger.info("==========================  [ headerExchangeGet : PJP HttpHeaders ] ");
                 headers = makeHttpHeaders((HttpHeaders) obj);
             }
+
+            if(obj instanceof String) prodCode = (String) obj;
         }
         // Span span = tracer.buildSpan(pjp.getSignature().getName()).start();
-        Object[] args = {headers};
-        result = pjp.proceed(args);
+        if("getDetailsInfo".equals(pjp.getSignature().getName())) {
+            logger.info("==========================  [ headerExchangeGet : PJP Method Name ] getDetailsInfo");
+            Object[]  args = {headers, prodCode};
+            result = pjp.proceed(args);
+        } else if("getPrpductpageInfo".equals(pjp.getSignature().getName())) {
+            logger.info("==========================  [ headerExchangeGet : PJP Method Name ] getPrpductpageInfo");
+            Object[]  args = {headers};
+            result = pjp.proceed(args);
+        }
+        // Object[] args = {headers};
+        // result = pjp.proceed(args);
         // span.finish();
         
         ResponseEntity<Object> entity = (ResponseEntity<Object>) result;

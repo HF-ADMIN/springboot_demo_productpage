@@ -125,7 +125,7 @@ public class ProductpageService {
             JSONObject reviewsResponse = serviceUtil.callRemoteService(restTemplate, baseReviewsURL, httpEntity, httpMethod);
             System.out.println("                         reviewsResponse : " + reviewsResponse);
 
-            // reviewsResponse에서 reviewList 추출
+            // // reviewsResponse에서 reviewList 추출
             JSONArray reviewsList = (JSONArray)reviewsResponse.get("reviewsList");
             List<ProductpageDTO.Review> tempList = new ArrayList<>();
             for(Object reviews : reviewsList) {
