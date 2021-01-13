@@ -50,22 +50,27 @@ public class ServiceUtil {
 
         ResponseEntity<String> serviceResponse = null;
 
-        if("GET".equals(httpMethod)) {
-            serviceResponse = restTemplate.exchange(
-                baseURL, HttpMethod.GET, requestEntity, String.class);  
-        } else if("POST".equals(httpMethod)) {
-            serviceResponse = restTemplate.postForEntity(
-                baseURL, requestEntity, String.class);
-        }
-
-        if(serviceResponse != null && serviceResponse.getBody() != null) {
-            logger.info(
-                    "=====================> [ServiceUtil / callRemoteService] serviceResponse :" + serviceResponse.getBody());
-
-            // From String to JSONOBject
-            JSONParser jsonParser = new JSONParser();
-            String jsonString = String.valueOf(serviceResponse.getBody());
-            jsonObject = (JSONObject)jsonParser.parse(jsonString);
+        try {
+            if("GET".equals(httpMethod)) {
+                serviceResponse = restTemplate.exchange(
+                    baseURL, HttpMethod.GET, requestEntity, String.class);  
+            } else if("POST".equals(httpMethod)) {
+                serviceResponse = restTemplate.postForEntity(
+                    baseURL, requestEntity, String.class);
+            }
+    
+            if(serviceResponse != null && serviceResponse.getBody() != null) {
+                logger.info(
+                        "=====================> [ServiceUtil / callRemoteService] serviceResponse :" + serviceResponse.getBody());
+    
+                // From String to JSONOBject
+                JSONParser jsonParser = new JSONParser();
+                String jsonString = String.valueOf(serviceResponse.getBody());
+                jsonObject = (JSONObject)jsonParser.parse(jsonString);
+            }
+        }catch(Exception e) {
+            e.printStackTrace();
+            throw e;
         }
 
         logger.info("=====================> [ServiceUtil / callRemoteService] Return jsonObject : " + jsonObject);
