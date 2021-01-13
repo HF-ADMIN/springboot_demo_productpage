@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.Date;
+import java.util.UUID;
 
 public class CommUtil {
     /**
@@ -40,5 +42,13 @@ public class CommUtil {
         }
 
         return fileString;
+    }
+
+    public static String genUUID() {
+        return String.valueOf(UUID.randomUUID().toString().replaceAll("-", ""));
+    }
+
+    public static Date getCurrentDate() throws Exception {
+        return new Date();
     }
 }

@@ -1,13 +1,22 @@
 package com.example.demo_productpage.aop;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import com.example.demo_productpage.dto.ProductpageDTO;
+import com.example.demo_productpage.kafka.Producer;
+import com.example.demo_productpage.util.CommUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.After;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -48,6 +57,11 @@ public class ProductpageSpanAspect {
     private Tracer tracer;
 
     Logger logger = LoggerFactory.getLogger(ProductpageSpanAspect.class);
+
+    private String kafkaUUID = null;
+
+    @Autowired
+    private Environment env;
 
     // @Autowired
     // public SpanAspect(Tracer tracer){
@@ -182,6 +196,96 @@ public class ProductpageSpanAspect {
         headers = makeHttpHeaders(entity.getHeaders());
         logger.info("[                             headerExchangePost End                               ]");
         return ResponseEntity.ok().headers(headers).body(entity.getBody());
+    }
+
+
+    /**
+     * @methodName  messageBeforeQueueLogging
+     * @return      void
+     * @description http request header, body 값으로 kafka msg produce
+     *              com.example.demo2_productpage.controller.ProductpageController.*(..) 패턴으로 Before AOP를 적용합니다.
+     */
+    @Before("execution(* com.example.demo2_productpage.controller.ProductpageController.*(..))")
+    public void messageBeforeQueueLogging(ProceedingJoinPoint pjp) throws Throwable {
+        logger.info("[                             Kafka Before Logging Start                                ]");
+        logger.info("============================  [ AOP:messageBeforeQueueLogging ]");
+        logger.info(kafkaUUID);
+
+        kafkaUUID = CommUtil.genUUID();
+
+        String Msg = "";
+        String headersString = "";
+        String bodyString = "";
+        String timeStamp = "";
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        ObjectMapper mapper = new ObjectMapper();
+
+        timeStamp = "[ " + currentDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")) + " ]|"
+                  + "[ " + env.getProperty("kafka.service.code") + " ]|"
+                  + "[ " + pjp.getSignature().getName() + " ]|"
+                  + "[ " + kafkaUUID + " ]|";
+
+
+        for(Object obj : pjp.getArgs()) {
+            if(obj instanceof HttpHeaders) {
+                headersString = timeStamp + obj.toString();
+            }
+
+            if(obj instanceof ProductpageDTO.Request) {
+                bodyString = mapper.writeValueAsString(obj);
+            }
+        }
+
+        Msg = headersString +" "+ bodyString;
+        logger.info(Msg);
+        Producer.produce(env.getProperty("kafka.brokers"), env.getProperty("kafka.topic"), Msg);
+
+        logger.info("[                             Kafka Before Logging END                                ]");
+
+    }
+
+
+    /**
+     * @methodName  messageAfterQueueLogging
+     * @return      null
+     * @description http request header, body 값으로 kafka msg produce
+     *              com.example.demo2_productpage.controller.ProductpageController.*(..) 패턴으로 Before AOP를 적용합니다.
+     */
+    @After("execution(* com.example.demo2_productpage.controller.ProductpageController.*(..))")
+    public void messageAfterQueueLogging(ProceedingJoinPoint pjp) throws Throwable {
+        logger.info("[                             Kafka After Logging Start                                ]");
+        logger.info("============================  [ AOP:messageAfterQueueLogging ]");
+        logger.info(kafkaUUID);
+
+        String Msg = "";
+        String headersString = "";
+        String bodyString = "";
+        String timeStamp = "";
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        ObjectMapper mapper = new ObjectMapper();
+
+        timeStamp = "[ " + currentDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")) + " ]|"
+                  + "[ " + env.getProperty("kafka.service.code") + " ]|"
+                  + "[ " + pjp.getSignature().getName() + " ]|"
+                  + "[ " + kafkaUUID + " ]|";
+
+
+        for(Object obj : pjp.getArgs()) {
+            if(obj instanceof HttpHeaders) {
+                headersString = timeStamp + obj.toString();
+            }
+
+            if(obj instanceof ProductpageDTO.Request) {
+                bodyString = mapper.writeValueAsString(obj);
+            }
+        }
+
+        Msg = headersString +" "+ bodyString;
+        logger.info(Msg);
+        Producer.produce(env.getProperty("kafka.brokers"), env.getProperty("kafka.topic"), Msg);
+
+        logger.info("[                             Kafka After Logging END                                ]");
+
     }
 
 }
