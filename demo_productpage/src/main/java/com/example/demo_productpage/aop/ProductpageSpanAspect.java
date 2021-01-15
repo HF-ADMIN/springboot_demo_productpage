@@ -8,6 +8,7 @@ import com.example.demo_productpage.kafka.Producer;
 import com.example.demo_productpage.util.CommUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.After;
 import org.aspectj.lang.annotation.Around;
@@ -147,7 +148,7 @@ public class ProductpageSpanAspect {
             logger.info("==========================  [ headerExchangeGet : PJP Method Name ] getDetailsInfo");
             Object[]  args = {headers, prodCode};
             result = pjp.proceed(args);
-        } else if("getPrpductpageInfo".equals(pjp.getSignature().getName())) {
+        } else if("getProductpageInfo".equals(pjp.getSignature().getName())) {
             logger.info("==========================  [ headerExchangeGet : PJP Method Name ] getPrpductpageInfo");
             Object[]  args = {headers};
             result = pjp.proceed(args);
@@ -203,10 +204,10 @@ public class ProductpageSpanAspect {
      * @methodName  messageBeforeQueueLogging
      * @return      void
      * @description http request header, body 값으로 kafka msg produce
-     *              com.example.demo2_productpage.controller.ProductpageController.*(..) 패턴으로 Before AOP를 적용합니다.
+     *              com.example.demo_productpage.controller.ProductpageController.*(..) 패턴으로 Before AOP를 적용합니다.
      */
-    @Before("execution(* com.example.demo2_productpage.controller.ProductpageController.*(..))")
-    public void messageBeforeQueueLogging(ProceedingJoinPoint pjp) throws Throwable {
+    @Before("execution(* com.example.demo_productpage.controller.ProductpageController.*(..))")
+    public void messageBeforeQueueLogging(JoinPoint pjp) throws Throwable {
         logger.info("[                             Kafka Before Logging Start                                ]");
         logger.info("============================  [ AOP:messageBeforeQueueLogging ]");
         logger.info(kafkaUUID);
@@ -249,10 +250,10 @@ public class ProductpageSpanAspect {
      * @methodName  messageAfterQueueLogging
      * @return      null
      * @description http request header, body 값으로 kafka msg produce
-     *              com.example.demo2_productpage.controller.ProductpageController.*(..) 패턴으로 Before AOP를 적용합니다.
+     *              com.example.demo_productpage.controller.ProductpageController.*(..) 패턴으로 Before AOP를 적용합니다.
      */
-    @After("execution(* com.example.demo2_productpage.controller.ProductpageController.*(..))")
-    public void messageAfterQueueLogging(ProceedingJoinPoint pjp) throws Throwable {
+    @After("execution(* com.example.demo_productpage.controller.ProductpageController.*(..))")
+    public void messageAfterQueueLogging(JoinPoint pjp) throws Throwable {
         logger.info("[                             Kafka After Logging Start                                ]");
         logger.info("============================  [ AOP:messageAfterQueueLogging ]");
         logger.info(kafkaUUID);

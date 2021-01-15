@@ -76,8 +76,8 @@ public class ProductpageService {
 
                 // File을 String으로 변환하여 product에 setting
                 // 테스트를 위해서 잠시 막아둠
-                // File file = new File(dao.getImgPath());
-                // product.setProdImg(CommUtil.fileToString(file));
+                File file = new File(dao.getImgPath());
+                product.setProdImg(CommUtil.fileToString(file));
                 prodList.add(product);
             }
             response.setProductList(prodList);
