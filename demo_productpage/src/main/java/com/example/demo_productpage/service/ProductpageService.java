@@ -66,7 +66,7 @@ public class ProductpageService {
         try {
             // ProductpageRepository를 사용하여 productpage table의 모든 데이터를 조회
             List<ProductpageDAO> daoList = repository.findByProdCode();
-            System.out.println("                      daoList : " + daoList);
+            // System.out.println("                      daoList : " + daoList);
             
             for(ProductpageDAO dao : daoList) {
                 ProductpageDTO.Product product = new ProductpageDTO.Product();
@@ -113,7 +113,7 @@ public class ProductpageService {
         try {
             // Remote Service Call(Details Service)
             JSONObject detailsResponse = serviceUtil.callRemoteService(restTemplate, baseDetailsURL, httpEntity, httpMethod);
-            System.out.println("                         detailsResponse : " + detailsResponse);
+            // System.out.println("                         detailsResponse : " + detailsResponse);
 
             response.setProdCode(prodCode);
             response.setProdName((String)detailsResponse.get("prodName"));
@@ -123,17 +123,19 @@ public class ProductpageService {
 
             // Remote Service Call(Reviews Service)
             JSONObject reviewsResponse = serviceUtil.callRemoteService(restTemplate, baseReviewsURL, httpEntity, httpMethod);
-            System.out.println("                         reviewsResponse : " + reviewsResponse);
+            // System.out.println("                         reviewsResponse : " + reviewsResponse);
 
             // // reviewsResponse에서 reviewList 추출
             JSONArray reviewsList = (JSONArray)reviewsResponse.get("reviewsList");
             List<ProductpageDTO.Review> tempList = new ArrayList<>();
             for(Object reviews : reviewsList) {
                 JSONObject tempObject = (JSONObject)reviews;
+
+                
                 ProductpageDTO.Review review = new ProductpageDTO.Review();
                 review.setReviewsId((String)tempObject.get("reviewsId"));
                 review.setContents((String)tempObject.get("contents"));
-                review.setRating(Integer.valueOf(String.valueOf(tempObject.get("rating"))));
+                if(tempObject.get("rating") != null) review.setRating(Integer.valueOf(String.valueOf(tempObject.get("rating"))));
                 tempList.add(review);
             }
 

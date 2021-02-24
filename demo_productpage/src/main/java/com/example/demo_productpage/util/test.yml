@@ -1,0 +1,592 @@
+shortDescription: CI/CD for PoC
+objectKinds:
+  - Task
+  - PersistentVolumeClaim
+  - IntegrationConfig
+longDescription: CI/CD template for PoC
+parameters:
+  - description: A GitLab URL
+    displayName: GitLabUrl
+    name: GITLAB_URL
+    required: true
+  - description: Registry URL
+    displayName: RegistryUrl
+    name: REGISTRY_URL
+    required: true
+  - description: Temporary Registry URL
+    displayName: TempRegistryUrl
+    name: TMP_REGISTRY_URL
+    required: true
+  - description: Registry credential secret name
+    displayName: RegistryCredential
+    name: REGISTRY_CRED
+    required: true
+  - description: Approval User
+    displayName: ApprovalUser
+    name: APPROVAL_USER
+    required: true
+  - description: Approval Email
+    displayName: ApprovalEmail
+    name: APPROVAL_EMAIL
+    required: true
+  - description: Elastic Search
+    displayName: ElasticUrl
+    name: ELASTIC_URL
+    required: true
+urlDescription: 'https://github.com/tmax-cloud/cicd-operator'
+metadata:
+  annotations:
+    createdTime: '2021-02-08T16:48:26.491921803+09:00'
+    creator: kubernetes-admin
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"tmax.io/v1","imageUrl":"https://avatars1.githubusercontent.com/u/60682780?s=200\u0026v=4","kind":"ClusterTemplate","longDescription":"CI/CD
+      template for
+      PoC","metadata":{"annotations":{},"name":"cicd-poc-template-zap"},"objects":[{"apiVersion":"tekton.dev/v1beta1","kind":"Task","metadata":{"name":"spotbugs"},"spec":{"params":[{"name":"warName","type":"string"},{"name":"projectId","type":"string"},{"name":"elasticUrl","type":"string"}],"steps":[{"image":"tmaxcloudck/cicd-util:spotbugs","name":"run-sast","script":"export
+      PR_ID=`echo $(params.projectId)| sed 's/ /-/g'`\n\nmkdir -p /app\nmv
+      /spotbugs-plugin/tmax-1.0-SNAPSHOT.jar $SPOTBUGS_HOME/plugin/\n\n# Run
+      spotbugs\nspotbugs -output /app/$PR_ID.txt
+      $(workspaces.source.path)/$(params.warName)\nsh /parse.sh $PR_ID-`date
+      +%s` /app/$PR_ID.txt shinhan-poc-sast-report-spotbugs\u003e
+      /app/$PR_ID.json\ncat /app/$PR_ID.json\n\n# Send to elastic search\ncurl
+      -s -k -X POST -H 'Content-Type: application/json' --data-binary
+      @/app/$PR_ID.json $(params.elasticUrl)/$PR_ID/_bulk\n\n#
+      Exit\nFILE_SIZE=$(stat -c%s /app/$PR_ID.txt)\nexit
+      \"$FILE_SIZE\"\n"}],"workspaces":[{"name":"source"}]}},{"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"name":"cicd-test-cache"},"spec":{"accessModes":["ReadWriteMany"],"resources":{"requests":{"storage":"10Gi"}},"storageClassName":"csi-cephfs-sc"}},{"apiVersion":"cicd.tmax.io/v1","kind":"IntegrationConfig","metadata":{"name":"cicd-test"},"spec":{"git":{"apiUrl":"${GITLAB_URL}","repository":"root/cicd-test","token":{"valueFrom":{"secretKeyRef":{"key":"token","name":"cicd-test-token"}}},"type":"gitlab"},"jobs":{"postSubmit":[{"approval":{"approvers":["${APPROVAL_USER}=${APPROVAL_EMAIL}"],"requestMessage":"Please
+      approve
+      this!\n"},"name":"approval","when":{"branch":["master"]}},{"after":["approval"],"env":[{"name":"SOURCE_PATH","value":"/tekton/home/integ-source"},{"name":"IMAGE_URL","value":"${REGISTRY_URL}/cicd-test"},{"name":"TARGET_FILE","value":"$(workspaces.s2i.path)/image-url"}],"image":"tmaxcloudck/cicd-util:1.2.1","imagePullPolicy":"Always","name":"s2i","script":"#!/bin/sh\nset
+      -ex\n\n/cicd-util update-image-url\n\necho
+      'MAVEN_ARGS_APPEND=-Dmaven.repo.local=/repo' \u003e\u003e
+      /tmp/env.env\n\n/usr/local/bin/s2i --clearCache --loglevel=0 \\\nbuild .
+      tmaxcloudck/s2i-tomcat:latest \\\n-E /tmp/env.env \\\n--as-dockerfile
+      $(workspaces.s2i.path)/gen-source/Dockerfile.gen\n","when":{"branch":["master"]}},{"after":["s2i"],"image":"quay.io/buildah/stable","name":"build-push-image","script":"#!/bin/sh\nset
+      -ex\n\nexport IMAGE_URL=$(cat $(workspaces.s2i.path)/image-url)\n\nmkdir
+      -p $(workspaces.cache.path)/.m2/repository\nchown -R 1001:0
+      $(workspaces.cache.path)/.m2/\n\nbuildah bud --format docker
+      --storage-driver=vfs -f ./Dockerfile.gen -t $IMAGE_URL -v
+      $(workspaces.cache.path)/.m2/repository:/repo:rw .\nbuildah push
+      --storage-driver=vfs --tls-verify=false $IMAGE_URL
+      docker://${TMP_REGISTRY_URL}/test:test\n","securityContext":{"privileged":true},"skipCheckout":true,"when":{"branch":["master"]},"workingDir":"$(workspaces.s2i.path)/gen-source"},{"after":["build-push-image"],"env":[{"name":"THRESHOLD","value":"400"},{"name":"CRED_SECRET","value":"${REGISTRY_CRED}"}],"image":"tmaxcloudck/cicd-util:poc","imagePullPolicy":"Always","name":"scan","script":"#!/bin/sh\nset
+      -ex\n\nexport IMAGE_URL=${TMP_REGISTRY_URL}/test:test\n\n/cicd-util
+      scan-image\n","skipCheckout":true,"when":{"branch":["master"]}},{"after":["scan"],"image":"quay.io/buildah/stable","name":"push-target","script":"#!/bin/sh\nset
+      -ex\n\nexport IMAGE_URL=$(cat $(workspaces.s2i.path)/image-url)\n\nbuildah
+      pull --storage-driver=vfs --tls-verify=false
+      docker://${TMP_REGISTRY_URL}/test:test\nbuildah push --storage-driver=vfs
+      --tls-verify=false ${TMP_REGISTRY_URL}/test:test
+      docker://$IMAGE_URL\n","securityContext":{"privileged":true},"skipCheckout":true,"when":{"branch":["master"]}},{"after":["push-target"],"env":[{"name":"SIGNER","value":"cicd-test"},{"name":"DOCKER_SECRET_NAME","value":"${REGISTRY_CRED}"}],"image":"tmaxcloudck/cicd-util:poc","imagePullPolicy":"Always","name":"sign","script":"#!/bin/sh\nset
+      -ex\n\nexport IMAGE_URL=$(cat
+      $(workspaces.s2i.path)/image-url)\n\n/cicd-util
+      sign-image\n","skipCheckout":true,"when":{"branch":["master"]}},{"after":["sign"],"image":"hashicorp/terraform:0.14.3","name":"deploy","script":"#!/bin/sh\nset
+      -ex\n\nexport IMAGE_URL=$(cat $(workspaces.s2i.path)/image-url)\n\ncat
+      \u003c\u003cEOT \u003e deploy.tf\nterraform {\n  required_providers {\n   
+      kubernetes = {\n      source = \"hashicorp/kubernetes\"\n      version =
+      \"1.13.3\"\n    }\n  }\n}\nprovider \"kubernetes\" {\n  load_config_file =
+      false\n\n  host =
+      \"https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT\"\n 
+      cluster_ca_certificate =
+      file(\"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\")\n  token =
+      file(\"/var/run/secrets/kubernetes.io/serviceaccount/token\")\n}\nresource
+      \"kubernetes_deployment\" \"cicd-test\" {\n  metadata {\n    name =
+      \"cicd-test\"\n    namespace =
+      file(\"/var/run/secrets/kubernetes.io/serviceaccount/namespace\")\n   
+      labels = {\n      app = \"cicd-test\"\n    }\n  }\n\n  spec {\n   
+      replicas = 1\n\n    selector {\n      match_labels = {\n        app =
+      \"cicd-test\"\n      }\n    }\n\n    template {\n      metadata {\n       
+      labels = {\n          app = \"cicd-test\"\n        }\n      }\n\n     
+      spec {\n        container {\n          image = \"$IMAGE_URL\"\n         
+      image_pull_policy = \"Always\"\n          name  = \"cicd-test\"\n         
+      readinessProbe {\n            httpGet {\n              path =
+      \"/\"\n              port = 8080\n            }\n          }\n       
+      }\n        image_pull_secrets {\n          name =
+      \"${REGISTRY_CRED}\"\n        }\n      }\n    }\n  }\n}\nresource
+      \"kubernetes_service\" \"cicd-test\" {\n  metadata {\n    name =
+      \"cicd-test\"\n    namespace =
+      file(\"/var/run/secrets/kubernetes.io/serviceaccount/namespace\")\n   
+      labels = {\n      test = \"cicd-test\"\n    }\n  }\n  spec {\n    selector
+      = {\n      app = \"cicd-test\"\n    }\n    type = \"NodePort\"\n    port
+      {\n      port = 8080\n    }\n  }\n}\nEOT\ncat deploy.tf\n\nterraform
+      init\nterraform apply
+      -auto-approve\n","skipCheckout":true,"when":{"branch":["master"]}},{"after":["deploy"],"image":"core.harbor.220.90.208.239.nip.io/poc-security/zap-base:latest","name":"zaproxy","script":"export
+      PROJECT_ID_FOR_FILE=`echo $CI_REPOSITORY| sed 's/\\//--/g;
+      s/\\./-/g'`\nexport PROJECT_ID=$CI_REPOSITORY\nexport
+      PROJECT_URL=\"http://cicd-test.sh-poc:8080\"\n\necho 'PROJECT_ID_FOR_FILE
+      = '$PROJECT_ID_FOR_FILE\necho 'PROJECT_URL = '$PROJECT_URL\n\nzap.sh -cmd
+      -newsession $PROJECT_ID_FOR_FILE\nzap.sh -cmd -session
+      /home/zap/.ZAP_D/session/$PROJECT_ID_FOR_FILE -quickurl $PROJECT_URL
+      -quickout /home/zap/parse/$PROJECT_ID_FOR_FILE.xml -cmd\n\ncd
+      /home/zap/parse\nchmod 755 $PROJECT_ID_FOR_FILE.xml\ncat
+      $PROJECT_ID_FOR_FILE.xml\n\n./parser.py $PROJECT_ID-`date +%s`
+      $PROJECT_ID_FOR_FILE\n\nchmod 755 $PROJECT_ID_FOR_FILE.json\ncat
+      $PROJECT_ID_FOR_FILE.json\n\ncurl --location --request POST
+      \"http://opendistro-els.efk:9200/_bulk\" --header
+      'Content-Type:application/json' --data-binary
+      @/home/zap/parse/$PROJECT_ID_FOR_FILE.json\n","skipCheckout":true,"when":{"branch":["master"]}}],"preSubmit":[{"image":"maven:3.6.3-jdk-8-slim","name":"unit-test","script":"mkdir
+      -p $(workspaces.cache.path)/.m2/repository\nmvn
+      -Dmaven.repo.local=$(workspaces.cache.path)/.m2/repository test
+      package\n\ncp target/TomcatMavenApp-2.0.war
+      $(workspaces.s2i.path)/TomcatMavenApp-2.0.war\n","when":{"branch":["master"]}},{"after":["unit-test"],"name":"spotbugs","tektonTask":{"params":[{"name":"warName","stringVal":"TomcatMavenApp-2.0.war"},{"name":"projectId","stringVal":"test-project"},{"name":"elasticUrl","stringVal":"${ELASTIC_URL}"}],"taskRef":{"local":{"kind":"Task","name":"spotbugs"}},"workspaces":[{"name":"source","workspace":"s2i"}]},"when":{"branch":["master"]}}]},"secrets":[{"name":"${REGISTRY_CRED}"}],"workspaces":[{"name":"s2i","volumeClaimTemplate":{"spec":{"accessModes":["ReadWriteMany"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"csi-cephfs-sc"}}},{"name":"cache","persistentVolumeClaim":{"claimName":"cicd-test-cache"}}]}}],"parameters":[{"description":"A
+      GitLab
+      URL","displayName":"GitLabUrl","name":"GITLAB_URL","required":true},{"description":"Registry
+      URL","displayName":"RegistryUrl","name":"REGISTRY_URL","required":true},{"description":"Temporary
+      Registry
+      URL","displayName":"TempRegistryUrl","name":"TMP_REGISTRY_URL","required":true},{"description":"Registry
+      credential secret
+      name","displayName":"RegistryCredential","name":"REGISTRY_CRED","required":true},{"description":"Approval
+      User","displayName":"ApprovalUser","name":"APPROVAL_USER","required":true},{"description":"Approval
+      Email","displayName":"ApprovalEmail","name":"APPROVAL_EMAIL","required":true},{"description":"Elastic
+      Search","displayName":"ElasticUrl","name":"ELASTIC_URL","required":true}],"provider":"tmax","shortDescription":"CI/CD
+      for
+      PoC","tags":["integrationconfig","cicd"],"urlDescription":"https://github.com/tmax-cloud/cicd-operator"}
+    updatedTime: '2021-02-08T16:56:06.036680525+09:00'
+    updater: kubernetes-admin
+  creationTimestamp: '2021-02-08T07:48:26Z'
+  generation: 3
+  managedFields:
+    - apiVersion: tmax.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:objectKinds': {}
+        'f:status':
+          .: {}
+          'f:message': {}
+          'f:status': {}
+      manager: manager
+      operation: Update
+      time: '2021-02-08T07:48:26Z'
+    - apiVersion: tmax.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:objects': {}
+        'f:urlDescription': {}
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:kubectl.kubernetes.io/last-applied-configuration': {}
+        'f:provider': {}
+        'f:imageUrl': {}
+        'f:longDescription': {}
+        'f:tags': {}
+        'f:shortDescription': {}
+        'f:parameters': {}
+      manager: kubectl-client-side-apply
+      operation: Update
+      time: '2021-02-08T07:56:06Z'
+  name: cicd-poc-template-zap
+  resourceVersion: '59323080'
+  selfLink: /apis/tmax.io/v1/clustertemplates/cicd-poc-template-zap
+  uid: de428a48-0ed1-4374-9d3e-e235591ffd4f
+provider: tmax
+status:
+  message: update success
+  status: Success
+objects:
+  - apiVersion: tekton.dev/v1beta1
+    kind: Task
+    metadata:
+      name: spotbugs
+    spec:
+      params:
+      
+        - name: warName
+          type: string
+        - name: projectId
+          type: string
+        - name: elasticUrl
+          type: string
+      steps:
+        - image: 'tmaxcloudck/cicd-util:spotbugs'
+          name: run-sast
+          script: >
+            export PR_ID=`echo $(params.projectId)| sed 's/ /-/g'`
+
+
+            mkdir -p /app
+
+            mv /spotbugs-plugin/tmax-1.0-SNAPSHOT.jar $SPOTBUGS_HOME/plugin/
+
+
+            # Run spotbugs
+
+            spotbugs -output /app/$PR_ID.txt
+            $(workspaces.source.path)/$(params.warName)
+
+            sh /parse.sh $PR_ID-`date +%s` /app/$PR_ID.txt
+            shinhan-poc-sast-report-spotbugs> /app/$PR_ID.json
+
+            cat /app/$PR_ID.json
+
+
+            # Send to elastic search
+
+            curl -s -k -X POST -H 'Content-Type: application/json' --data-binary
+            @/app/$PR_ID.json $(params.elasticUrl)/$PR_ID/_bulk
+
+
+            # Exit
+
+            FILE_SIZE=$(stat -c%s /app/$PR_ID.txt)
+
+            exit "$FILE_SIZE"
+      workspaces:
+        - name: source
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: cicd-test-cache
+    spec:
+      accessModes:
+        - ReadWriteMany
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: csi-cephfs-sc
+  - apiVersion: cicd.tmax.io/v1
+    kind: IntegrationConfig
+    metadata:
+      name: cicd-test
+    spec:
+      git:
+        apiUrl: '${GITLAB_URL}'
+        repository: root/cicd-test
+        token:
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: cicd-test-token
+        type: gitlab
+      jobs:
+        postSubmit:
+          - approval:
+              approvers:
+                - '${APPROVAL_USER}=${APPROVAL_EMAIL}'
+              requestMessage: |
+                Please approve this!
+            name: approval
+            when:
+              branch:
+                - master
+          - after:
+              - approval
+            env:
+              - name: SOURCE_PATH
+                value: /tekton/home/integ-source
+              - name: IMAGE_URL
+                value: '${REGISTRY_URL}/cicd-test'
+              - name: TARGET_FILE
+                value: $(workspaces.s2i.path)/image-url
+            image: 'tmaxcloudck/cicd-util:1.2.1'
+            imagePullPolicy: Always
+            name: s2i
+            script: |
+              #!/bin/sh
+              set -ex
+
+              /cicd-util update-image-url
+
+              echo 'MAVEN_ARGS_APPEND=-Dmaven.repo.local=/repo' >> /tmp/env.env
+
+              /usr/local/bin/s2i --clearCache --loglevel=0 \
+              build . tmaxcloudck/s2i-tomcat:latest \
+              -E /tmp/env.env \
+              --as-dockerfile $(workspaces.s2i.path)/gen-source/Dockerfile.gen
+            when:
+              branch:
+                - master
+          - after:
+              - s2i
+            image: quay.io/buildah/stable
+            name: build-push-image
+            script: >
+              #!/bin/sh
+
+              set -ex
+
+
+              export IMAGE_URL=$(cat $(workspaces.s2i.path)/image-url)
+
+
+              mkdir -p $(workspaces.cache.path)/.m2/repository
+
+              chown -R 1001:0 $(workspaces.cache.path)/.m2/
+
+
+              buildah bud --format docker --storage-driver=vfs -f
+              ./Dockerfile.gen -t $IMAGE_URL -v
+              $(workspaces.cache.path)/.m2/repository:/repo:rw .
+
+              buildah push --storage-driver=vfs --tls-verify=false $IMAGE_URL
+              docker://${TMP_REGISTRY_URL}/test:test
+            securityContext:
+              privileged: true
+            skipCheckout: true
+            when:
+              branch:
+                - master
+            workingDir: $(workspaces.s2i.path)/gen-source
+          - after:
+              - build-push-image
+            env:
+              - name: THRESHOLD
+                value: '400'
+              - name: CRED_SECRET
+                value: '${REGISTRY_CRED}'
+            image: 'tmaxcloudck/cicd-util:poc'
+            imagePullPolicy: Always
+            name: scan
+            script: |
+              #!/bin/sh
+              set -ex
+
+              export IMAGE_URL=${TMP_REGISTRY_URL}/test:test
+
+              /cicd-util scan-image
+            skipCheckout: true
+            when:
+              branch:
+                - master
+          - after:
+              - scan
+            image: quay.io/buildah/stable
+            name: push-target
+            script: >
+              #!/bin/sh
+
+              set -ex
+
+
+              export IMAGE_URL=$(cat $(workspaces.s2i.path)/image-url)
+
+
+              buildah pull --storage-driver=vfs --tls-verify=false
+              docker://${TMP_REGISTRY_URL}/test:test
+
+              buildah push --storage-driver=vfs --tls-verify=false
+              ${TMP_REGISTRY_URL}/test:test docker://$IMAGE_URL
+            securityContext:
+              privileged: true
+            skipCheckout: true
+            when:
+              branch:
+                - master
+          - after:
+              - push-target
+            env:
+              - name: SIGNER
+                value: cicd-test
+              - name: DOCKER_SECRET_NAME
+                value: '${REGISTRY_CRED}'
+            image: 'tmaxcloudck/cicd-util:poc'
+            imagePullPolicy: Always
+            name: sign
+            script: |
+              #!/bin/sh
+              set -ex
+
+              export IMAGE_URL=$(cat $(workspaces.s2i.path)/image-url)
+
+              /cicd-util sign-image
+            skipCheckout: true
+            when:
+              branch:
+                - master
+          - after:
+              - sign
+            image: 'hashicorp/terraform:0.14.3'
+            name: deploy
+            script: |
+              #!/bin/sh
+              set -ex
+
+              export IMAGE_URL=$(cat $(workspaces.s2i.path)/image-url)
+
+              cat <<EOT > deploy.tf
+              terraform {
+                required_providers {
+                  kubernetes = {
+                    source = "hashicorp/kubernetes"
+                    version = "1.13.3"
+                  }
+                }
+              }
+              provider "kubernetes" {
+                load_config_file = false
+
+                host = "https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT"
+                cluster_ca_certificate = file("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+                token = file("/var/run/secrets/kubernetes.io/serviceaccount/token")
+              }
+              resource "kubernetes_deployment" "cicd-test" {
+                metadata {
+                  name = "cicd-test"
+                  namespace = file("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+                  labels = {
+                    app = "cicd-test"
+                  }
+                }
+
+                spec {
+                  replicas = 1
+
+                  selector {
+                    match_labels = {
+                      app = "cicd-test"
+                    }
+                  }
+
+                  template {
+                    metadata {
+                      labels = {
+                        app = "cicd-test"
+                      }
+                    }
+
+                    spec {
+                      container {
+                        image = "$IMAGE_URL"
+                        image_pull_policy = "Always"
+                        name  = "cicd-test"
+                        readinessProbe {
+                          httpGet {
+                            path = "/"
+                            port = 8080
+                          }
+                        }
+                      }
+                      image_pull_secrets {
+                        name = "${REGISTRY_CRED}"
+                      }
+                    }
+                  }
+                }
+              }
+              resource "kubernetes_service" "cicd-test" {
+                metadata {
+                  name = "cicd-test"
+                  namespace = file("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+                  labels = {
+                    test = "cicd-test"
+                  }
+                }
+                spec {
+                  selector = {
+                    app = "cicd-test"
+                  }
+                  type = "NodePort"
+                  port {
+                    port = 8080
+                  }
+                }
+              }
+              EOT
+              cat deploy.tf
+
+              terraform init
+              terraform apply -auto-approve
+            skipCheckout: true
+            when:
+              branch:
+                - master
+          - after:
+              - deploy
+            image: 'core.harbor.220.90.208.239.nip.io/poc-security/zap-base:latest'
+            name: zaproxy
+            script: >
+              export PROJECT_ID_FOR_FILE=`echo $CI_REPOSITORY| sed 's/\//--/g;
+              s/\./-/g'`
+
+              export PROJECT_ID=$CI_REPOSITORY
+
+              export PROJECT_URL="http://cicd-test.sh-poc:8080"
+
+
+              echo 'PROJECT_ID_FOR_FILE = '$PROJECT_ID_FOR_FILE
+
+              echo 'PROJECT_URL = '$PROJECT_URL
+
+
+              zap.sh -cmd -newsession $PROJECT_ID_FOR_FILE
+
+              zap.sh -cmd -session /home/zap/.ZAP_D/session/$PROJECT_ID_FOR_FILE
+              -quickurl $PROJECT_URL -quickout
+              /home/zap/parse/$PROJECT_ID_FOR_FILE.xml -cmd
+
+
+              cd /home/zap/parse
+
+              chmod 755 $PROJECT_ID_FOR_FILE.xml
+
+              cat $PROJECT_ID_FOR_FILE.xml
+
+
+              ./parser.py $PROJECT_ID-`date +%s` $PROJECT_ID_FOR_FILE
+
+
+              chmod 755 $PROJECT_ID_FOR_FILE.json
+
+              cat $PROJECT_ID_FOR_FILE.json
+
+
+              curl --location --request POST
+              "http://opendistro-els.efk:9200/_bulk" --header
+              'Content-Type:application/json' --data-binary
+              @/home/zap/parse/$PROJECT_ID_FOR_FILE.json
+            skipCheckout: true
+            when:
+              branch:
+                - master
+        preSubmit:
+          - image: 'maven:3.6.3-jdk-8-slim'
+            name: unit-test
+            script: >
+              mkdir -p $(workspaces.cache.path)/.m2/repository
+
+              mvn -Dmaven.repo.local=$(workspaces.cache.path)/.m2/repository
+              test package
+
+
+              cp target/TomcatMavenApp-2.0.war
+              $(workspaces.s2i.path)/TomcatMavenApp-2.0.war
+            when:
+              branch:
+                - master
+          - after:
+              - unit-test
+            name: spotbugs
+            tektonTask:
+              params:
+                - name: warName
+                  stringVal: TomcatMavenApp-2.0.war
+                - name: projectId
+                  stringVal: test-project
+                - name: elasticUrl
+                  stringVal: '${ELASTIC_URL}'
+              taskRef:
+                local:
+                  kind: Task
+                  name: spotbugs
+              workspaces:
+                - name: source
+                  workspace: s2i
+            when:
+              branch:
+                - master
+      secrets:
+        - name: '${REGISTRY_CRED}'
+      workspaces:
+        - name: s2i
+          volumeClaimTemplate:
+            spec:
+              accessModes:
+                - ReadWriteMany
+              resources:
+                requests:
+                  storage: 1Gi
+              storageClassName: csi-cephfs-sc
+        - name: cache
+          persistentVolumeClaim:
+            claimName: cicd-test-cache
+imageUrl: 'https://avatars1.githubusercontent.com/u/60682780?s=200&v=4'
+kind: ClusterTemplate
+tags:
+  - integrationconfig
+  - cicd
+apiVersion: tmax.io/v1

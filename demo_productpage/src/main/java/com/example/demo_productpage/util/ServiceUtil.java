@@ -60,8 +60,8 @@ public class ServiceUtil {
             }
     
             if(serviceResponse != null && serviceResponse.getBody() != null) {
-                logger.info(
-                        "=====================> [ServiceUtil / callRemoteService] serviceResponse :" + serviceResponse.getBody());
+                // logger.info(
+                //         "=====================> [ServiceUtil / callRemoteService] serviceResponse :" + serviceResponse.getBody());
     
                 // From String to JSONOBject
                 JSONParser jsonParser = new JSONParser();
@@ -73,7 +73,7 @@ public class ServiceUtil {
             throw e;
         }
 
-        logger.info("=====================> [ServiceUtil / callRemoteService] Return jsonObject : " + jsonObject);
+        // logger.info("=====================> [ServiceUtil / callRemoteService] Return jsonObject : " + jsonObject);
         return jsonObject;
     }
 

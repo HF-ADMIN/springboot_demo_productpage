@@ -16,7 +16,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
+@AllArgsConstructor 
 @Entity
 @Table(name="prod_code")
 public class ProdCodeDAO {

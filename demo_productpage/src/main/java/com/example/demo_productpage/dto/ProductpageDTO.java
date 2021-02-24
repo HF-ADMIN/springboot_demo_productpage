@@ -52,11 +52,11 @@ public class ProductpageDTO{
 
     @Getter
     @Setter
-    @AllArgsConstructor
+    @AllArgsConstructor 
     @NoArgsConstructor
     public static class DetailsResponse implements TInfoDTO {
         private String prodCode;
-        private String prodName;
+        private String prodName; 
         private String detailImg;
         private Integer resultCode;
         private List<ProductpageDTO.Review> reviewList;

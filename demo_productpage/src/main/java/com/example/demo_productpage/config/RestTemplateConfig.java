@@ -21,8 +21,8 @@ public class RestTemplateConfig {
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder restTemplateBuilder) {
         HttpComponentsClientHttpRequestFactory httpRequestFactory = new HttpComponentsClientHttpRequestFactory();
-        httpRequestFactory.setConnectTimeout(2000);
-        httpRequestFactory.setReadTimeout(3000);
+        httpRequestFactory.setConnectTimeout(60000);
+        httpRequestFactory.setReadTimeout(60000);
         HttpClient httpClient = HttpClientBuilder.create()
                 .setMaxConnTotal(200)
                 .setMaxConnPerRoute(20)
