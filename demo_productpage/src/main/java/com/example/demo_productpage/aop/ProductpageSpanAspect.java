@@ -80,6 +80,7 @@ public class ProductpageSpanAspect {
         logger.info("[                             spanLogging Start                                ]");
 
         /*
+        // Opentracing Span Test
         Span span = tracer.buildSpan(pjp.getSignature().getName()).start();
         Object result = pjp.proceed();
         span.finish();
@@ -217,11 +218,11 @@ public class ProductpageSpanAspect {
         String Msg = "";
         String headersString = "";
         String bodyString = "";
-        String timeStamp = "";
+        String kafkaData = "";
         LocalDateTime currentDateTime = LocalDateTime.now();
         ObjectMapper mapper = new ObjectMapper();
 
-        timeStamp = "[ " + currentDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")) + " ]|"
+        kafkaData = "[ " + currentDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")) + " ]|"
                   + "[ " + env.getProperty("kafka.service.code") + " ]|"
                   + "[ " + pjp.getSignature().getName() + " ]|"
                   + "[ " + kafkaUUID + " ]|";
@@ -229,7 +230,7 @@ public class ProductpageSpanAspect {
 
         for(Object obj : pjp.getArgs()) {
             if(obj instanceof HttpHeaders) {
-                headersString = timeStamp + obj.toString();
+                headersString = kafkaData + obj.toString();
             }
 
             if(obj instanceof ProductpageDTO.Request) {
@@ -261,11 +262,11 @@ public class ProductpageSpanAspect {
         String Msg = "";
         String headersString = "";
         String bodyString = "";
-        String timeStamp = "";
+        String kafkaData = "";
         LocalDateTime currentDateTime = LocalDateTime.now();
         ObjectMapper mapper = new ObjectMapper();
 
-        timeStamp = "[ " + currentDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")) + " ]|"
+        kafkaData = "[ " + currentDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")) + " ]|"
                   + "[ " + env.getProperty("kafka.service.code") + " ]|"
                   + "[ " + pjp.getSignature().getName() + " ]|"
                   + "[ " + kafkaUUID + " ]|";
@@ -273,7 +274,7 @@ public class ProductpageSpanAspect {
 
         for(Object obj : pjp.getArgs()) {
             if(obj instanceof HttpHeaders) {
-                headersString = timeStamp + obj.toString();
+                headersString = kafkaData + obj.toString();
             }
 
             if(obj instanceof ProductpageDTO.Request) {
