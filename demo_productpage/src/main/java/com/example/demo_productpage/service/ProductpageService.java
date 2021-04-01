@@ -39,7 +39,7 @@ public class ProductpageService {
     ProductpageRepository repository;
 
     // @Autowired
-    // private Tracer tracer;
+    // private Tracer tracer; 
 
     @Autowired
     private Environment env;

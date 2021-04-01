@@ -19,7 +19,7 @@ import lombok.Setter;
 @AllArgsConstructor 
 @Entity
 @Table(name="prod_code")
-public class ProdCodeDAO {
+public class ProdCodeDAO {  
     @Id 
     @Column(name="id", nullable=false)
     @GeneratedValue

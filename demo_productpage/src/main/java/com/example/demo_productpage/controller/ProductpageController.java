@@ -60,7 +60,7 @@ public class ProductpageController {
     @RequestMapping(value="/detailsInfo", method=RequestMethod.GET)
     public ResponseEntity<ProductpageDTO.DetailsResponse> getDetailsInfo(@RequestHeader HttpHeaders requestHeader, @RequestParam String prodCode) throws Exception{
         ProductpageDTO.DetailsResponse responseBody = null;
-        try {
+        try { 
             responseBody = service.getDetailsInfo(requestHeader, prodCode);
         }catch(Exception e) {
             e.printStackTrace();

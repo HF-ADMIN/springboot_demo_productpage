@@ -45,7 +45,7 @@ public class ProductpageDTO{
     @Setter
     @AllArgsConstructor
     @NoArgsConstructor
-    public static class MainResponse implements TInfoDTO {
+    public static class MainResponse implements TInfoDTO { 
         private Integer resultCode;
         private List<ProductpageDTO.Product> productList;
     }

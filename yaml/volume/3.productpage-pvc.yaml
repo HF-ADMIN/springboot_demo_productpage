@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  finalizers:
+  - kubernetes.io/pvc-protection
+  labels:
+    app: productpage
+  name: productpage-pvc-volume
+  namespace: demo-tinfo
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+  storageClassName: productpage-storage
+  volumeMode: Filesystem

@@ -22,7 +22,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(name="productpage")
-public class ProductpageDAO {
+public class ProductpageDAO {  
     @Id 
     @Column(name="id", nullable=false)
     @GeneratedValue

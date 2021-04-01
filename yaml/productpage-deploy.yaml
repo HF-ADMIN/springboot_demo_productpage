@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot-productpage-deployment
+  namespace: demo-tinfo
+  labels:
+    app: springboot-productpage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: springboot-productpage
+  template:
+    metadata:
+      labels:
+        app: springboot-productpage
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-worker1
+      volumes:
+        - name: tz-seoul
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Seoul
+        - name: productpage-storage
+          persistentVolumeClaim:
+            claimName: productpage-pvc-volume
+      containers:
+      - name: springboot-productpage-container
+        image: ${도커계정}/springboot-demo-productpage:latest
+        ports:
+        - containerPort: 8081
+        volumeMounts:
+          - name: tz-seoul
+            mountPath: /etc/localtime
+          - name: productpage-storage
+            mountPath: /mnt/demo/data
+        resources:
+          requests:
+            cpu: 100m
+          limits:
+            cpu: 150m

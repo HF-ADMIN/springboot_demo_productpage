@@ -22,7 +22,7 @@ public class CommUtil {
 
         try {
             inputStream = new FileInputStream(file);
-            byteOutStream = new ByteArrayOutputStream();
+            byteOutStream = new ByteArrayOutputStream(); 
 
             int len = 0;
             byte[] buf = new byte[1024];
